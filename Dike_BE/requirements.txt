@@ -9,7 +9,7 @@ asyncpg==0.31.0
 alembic==1.18.4
 psycopg2-binary==2.9.12
 
-# Cache / Session
+# Cache
 redis==7.4.0
 
 # Auth
@@ -22,14 +22,14 @@ pydantic==2.13.4
 pydantic-settings==2.14.1
 python-dotenv==1.2.2
 
-# HTTP client (Clova OCR 호출용)
+# HTTP client
 httpx==0.28.1
 
 # OCR fallback
 easyocr==1.7.2
 
-# AI
-openai==2.37.0
+# AI (Gemini)
+google-genai==1.19.0
 
 # Image storage (Cloudflare R2)
 boto3==1.43.9
