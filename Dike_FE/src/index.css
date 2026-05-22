@@ -1,0 +1,122 @@
+@import "tailwindcss";
+
+@theme {
+  --color-navy: #0f2244;
+  --color-navy-deep: #0a1530;
+  --color-navy-mid: #1a3565;
+  --color-navy-soft: #1e3a6e;
+  --color-blue-main: #3b82f6;
+  --color-blue-bright: #60a5fa;
+  --color-gold: #fbbf24;
+  --color-green: #10b981;
+  --color-red-alert: #ef4444;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+    background: #0a1530;
+    overflow: hidden;
+    height: 100%;
+  }
+
+  #root {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+@layer utilities {
+  .glass {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .glass-elev {
+    background: rgba(255, 255, 255, 0.09);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .border-soft {
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .text-on {
+    color: rgba(255, 255, 255, 0.95);
+  }
+
+  .text-sub {
+    color: rgba(255, 255, 255, 0.65);
+  }
+
+  .text-mute {
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@keyframes dike-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+@keyframes dike-pulse-ring {
+  0% { transform: scale(0.8); opacity: 0.8; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+@keyframes dike-wave {
+  0%, 100% { transform: scaleY(0.4); }
+  50% { transform: scaleY(1); }
+}
+
+@keyframes dike-slide-in {
+  from { transform: translateX(-20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes dike-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes hold-progress {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
+.animate-dike-pulse {
+  animation: dike-pulse 1s ease-in-out infinite;
+}
+
+.animate-pulse-ring {
+  animation: dike-pulse-ring 2.4s ease-out infinite;
+}
+
+.animate-wave {
+  animation: dike-wave 1s ease-in-out infinite;
+}
+
+.animate-slide-in {
+  animation: dike-slide-in 0.25s ease-out both;
+}
+
+.animate-fade-in {
+  animation: dike-fade-in 0.2s ease-out both;
+}
