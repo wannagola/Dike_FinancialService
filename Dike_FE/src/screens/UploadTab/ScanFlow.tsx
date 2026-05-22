@@ -1,31 +1,41 @@
-import { useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
+import { ocrPreview } from '../../api';
+import type { OcrResult } from '../../types';
 
 interface ScanFlowProps {
-  onDone: () => void;
+  onDone: (result: OcrResult) => void;
   onBack: () => void;
 }
 
-const MSGS = [
-  '카메라를 문서에 맞추세요',
-  '문서를 인식하고 있습니다...',
-  'AI가 내용을 분석 중입니다...',
-  '인식 완료!',
-];
-
 export default function ScanFlow({ onDone, onBack }: ScanFlowProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [status, setStatus] = useState<'idle' | 'uploading' | 'done' | 'error'>('idle');
   const [msgIdx, setMsgIdx] = useState(0);
-  const [done, setDone] = useState(false);
 
-  useEffect(() => {
-    const timings = [800, 2000, 3200, 4400];
-    const timeouts = timings.map((t, i) =>
-      setTimeout(() => {
-        setMsgIdx(i);
-        if (i === 3) setDone(true);
-      }, t)
-    );
-    return () => timeouts.forEach(clearTimeout);
-  }, []);
+  const MSGS = [
+    '사진을 선택하거나 촬영하세요',
+    '문서를 인식하고 있습니다...',
+    'AI가 내용을 분석 중입니다...',
+    '인식 완료!',
+  ];
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setStatus('uploading');
+    setMsgIdx(1);
+    try {
+      setTimeout(() => setMsgIdx(2), 1000);
+      const result = await ocrPreview(file);
+      setMsgIdx(3);
+      setStatus('done');
+      setTimeout(() => onDone(result), 600);
+    } catch {
+      setStatus('error');
+    }
+  };
+
+  const done = status === 'done';
 
   const borderColor = msgIdx === 0 ? 'rgba(255,255,255,0.5)'
     : msgIdx === 1 ? '#fbbf24'
@@ -38,29 +48,47 @@ export default function ScanFlow({ onDone, onBack }: ScanFlowProps) {
         <span className="text-[16px] font-semibold text-on flex-1 text-center">카메라 스캔</span>
       </div>
 
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*,application/pdf"
+        capture="environment"
+        className="hidden"
+        onChange={handleFile}
+      />
+
       <div className="flex-1 flex flex-col items-center justify-center gap-6 px-8">
         {/* 스캔 프레임 */}
-        <div
+        <button
           className="w-full aspect-[3/4] rounded-2xl border-2 flex items-center justify-center relative"
           style={{
             borderColor,
             background: 'rgba(255,255,255,0.04)',
             transition: 'border-color 0.5s',
           }}
+          onClick={() => status === 'idle' && inputRef.current?.click()}
+          disabled={status === 'uploading'}
         >
-          {/* 코너 마커 */}
           {[['top-2 left-2', 'border-t-2 border-l-2'],
             ['top-2 right-2', 'border-t-2 border-r-2'],
             ['bottom-2 left-2', 'border-b-2 border-l-2'],
             ['bottom-2 right-2', 'border-b-2 border-r-2'],
           ].map(([pos, border], i) => (
-            <div
-              key={i}
-              className={`absolute w-6 h-6 ${pos} ${border}`}
-              style={{ borderColor }}
-            />
+            <div key={i} className={`absolute w-6 h-6 ${pos} ${border}`} style={{ borderColor }} />
           ))}
 
+          {status === 'idle' && (
+            <div className="flex flex-col items-center gap-2 text-sub">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+              <span className="text-[13px]">탭해서 촬영 / 파일 선택</span>
+            </div>
+          )}
+          {status === 'uploading' && (
+            <div className="text-[14px] text-sub animate-pulse">분석 중...</div>
+          )}
           {done && (
             <div className="flex flex-col items-center gap-2">
               <div className="w-16 h-16 rounded-full bg-green/20 flex items-center justify-center">
@@ -71,12 +99,15 @@ export default function ScanFlow({ onDone, onBack }: ScanFlowProps) {
               <span className="text-[14px] text-on">인식 완료</span>
             </div>
           )}
-        </div>
+          {status === 'error' && (
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-[14px]" style={{ color: '#ef4444' }}>인식 실패. 다시 시도하세요.</span>
+            </div>
+          )}
+        </button>
 
-        {/* 상태 메시지 */}
         <div className="text-[15px] font-medium text-on text-center">{MSGS[msgIdx]}</div>
 
-        {/* 진행 바 */}
         <div className="w-full h-1 rounded-full bg-white/10 overflow-hidden">
           <div
             className="h-full rounded-full bg-blue-bright transition-all duration-700"
@@ -85,13 +116,13 @@ export default function ScanFlow({ onDone, onBack }: ScanFlowProps) {
         </div>
       </div>
 
-      {done && (
+      {status === 'error' && (
         <div className="px-5 pb-6">
           <button
-            onClick={onDone}
-            className="w-full py-4 rounded-2xl bg-blue-main text-white font-semibold text-[16px]"
+            onClick={() => { setStatus('idle'); setMsgIdx(0); }}
+            className="w-full py-4 rounded-2xl border border-soft text-[15px] text-sub"
           >
-            내용 확인하기
+            다시 시도
           </button>
         </div>
       )}

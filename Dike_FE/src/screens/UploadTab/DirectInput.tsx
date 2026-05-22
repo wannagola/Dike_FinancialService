@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import BigWriteOverlay from '../../components/BigWriteOverlay';
 import Icon from '../../components/Icon';
+import { createDocument } from '../../api';
 
 type InputMethod = 'keyboard' | 'voice' | 'handwrite';
 type Stage = 'input' | 'confirming' | 'summary' | 'done';
@@ -12,6 +13,14 @@ interface Field {
   options?: string[];
   placeholder?: string;
 }
+
+const CATEGORY_OPTIONS: { code: string; label: string; desc: string }[] = [
+  { code: 'CAT_01', label: '고지서 / 공과금', desc: '전기, 수도, 가스, 통신비 등' },
+  { code: 'CAT_04', label: '정기지출',        desc: '구독, 보험, 월세 등' },
+  { code: 'CAT_02', label: '송장 / 세금계산서', desc: '사업 관련 서류' },
+  { code: 'CAT_07', label: '의료비',          desc: '병원, 약국 영수증' },
+  { code: 'CAT_99', label: '기타',            desc: '그 외 문서' },
+];
 
 const FIELDS: Field[] = [
   { key: 'title',          label: '제목',            type: 'text',   placeholder: '예) 전기요금 5월' },
@@ -40,6 +49,7 @@ interface DirectInputProps {
 }
 
 export default function DirectInput({ onBack, onDone }: DirectInputProps) {
+  const [categoryCode, setCategoryCode] = useState('');
   const [fieldIdx, setFieldIdx] = useState(0);
   const [values, setValues]     = useState<Record<string, string>>({});
   const [method, setMethod]     = useState<InputMethod>('keyboard');
@@ -96,6 +106,29 @@ export default function DirectInput({ onBack, onDone }: DirectInputProps) {
     return v;
   };
 
+  /* --- 카테고리 선택 --- */
+  if (!categoryCode) {
+    return (
+      <div className="flex flex-col h-full animate-fade-in">
+        <Header label="서류 종류 선택" onBack={onBack} backLabel="← 뒤로" />
+        <div className="flex-1 flex flex-col gap-3 px-5 py-5 overflow-y-auto scrollbar-none">
+          <p className="text-[13px] text-sub text-center mb-1">어떤 종류의 서류인가요?</p>
+          {CATEGORY_OPTIONS.map(opt => (
+            <button
+              key={opt.code}
+              onClick={() => setCategoryCode(opt.code)}
+              className="w-full px-5 py-4 rounded-2xl border text-left flex flex-col gap-1 transition-all"
+              style={{ background: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.12)' }}
+            >
+              <span className="text-[15px] font-semibold text-on">{opt.label}</span>
+              <span className="text-[12px] text-mute">{opt.desc}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   /* --- 확인 단계 --- */
   if (stage === 'confirming') {
     const displayVal = formatValue(field.key, values[field.key] ?? draft);
@@ -146,7 +179,20 @@ export default function DirectInput({ onBack, onDone }: DirectInputProps) {
         </div>
         <div className="px-5 pb-6">
           <button
-            onClick={() => setStage('done')}
+            onClick={async () => {
+              try {
+                await createDocument({
+                  title: values['title'] ?? '문서',
+                  category_code: categoryCode,
+                  amount: values['amount'] ? Number(values['amount']) : undefined,
+                  due_date: values['date'] || undefined,
+                  partner_name: values['counterAccount'] || undefined,
+                });
+                setStage('done');
+              } catch {
+                // 저장 실패 시 done 화면으로 이동하지 않음
+              }
+            }}
             className="w-full py-4 rounded-2xl bg-blue-main text-white font-semibold text-[16px]"
           >
             서류함에 저장하기

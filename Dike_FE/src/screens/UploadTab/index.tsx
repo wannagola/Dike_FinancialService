@@ -3,6 +3,7 @@ import Icon from '../../components/Icon';
 import ScanFlow from './ScanFlow';
 import OcrConfirm from './OcrConfirm';
 import DirectInput from './DirectInput';
+import type { OcrResult } from '../../types';
 
 type Step = 'home' | 'scan' | 'ocr' | 'direct' | 'done';
 
@@ -12,9 +13,17 @@ interface UploadTabProps {
 
 export default function UploadTab({ onAnnounce }: UploadTabProps) {
   const [step, setStep] = useState<Step>('home');
+  const [ocrResult, setOcrResult] = useState<OcrResult | null>(null);
 
-  if (step === 'scan')   return <ScanFlow onDone={() => setStep('ocr')} onBack={() => setStep('home')} />;
-  if (step === 'ocr')    return <OcrConfirm onBack={() => setStep('scan')} onDone={() => setStep('done')} />;
+  if (step === 'scan') return (
+    <ScanFlow
+      onDone={(result) => { setOcrResult(result); setStep('ocr'); }}
+      onBack={() => setStep('home')}
+    />
+  );
+  if (step === 'ocr' && ocrResult) return (
+    <OcrConfirm result={ocrResult} onBack={() => setStep('scan')} onDone={() => setStep('done')} />
+  );
   if (step === 'direct') return <DirectInput onBack={() => setStep('home')} onDone={() => setStep('done')} />;
 
   if (step === 'done') {

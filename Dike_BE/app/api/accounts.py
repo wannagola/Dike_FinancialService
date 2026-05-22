@@ -5,7 +5,7 @@ from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.models.user import User
 from app.schemas import ApiResponse
-from app.schemas.account import AccountCreateRequest, AccountResponse
+from app.schemas.account import AccountCreateRequest, AccountResponse, BalanceUpdateRequest
 from app.services import account_service
 
 router = APIRouter()
@@ -76,6 +76,21 @@ async def set_primary(
     return ApiResponse(
         data=_to_response(account),
         tts=f"{bank} 계좌가 대표계좌로 설정되었습니다.",
+    )
+
+
+@router.patch("/{account_id}/balance", response_model=ApiResponse[AccountResponse])
+async def update_balance(
+    account_id: int,
+    req: BalanceUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    account = await account_service.update_balance(account_id, req.balance, current_user, db)
+    bank = BANK_NAMES.get(account.bank_code, account.bank_code)
+    return ApiResponse(
+        data=_to_response(account),
+        tts=f"{bank} 계좌 잔액이 {req.balance:,}원으로 업데이트되었습니다.",
     )
 
 

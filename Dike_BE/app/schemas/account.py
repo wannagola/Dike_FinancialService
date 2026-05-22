@@ -22,3 +22,7 @@ class AccountResponse(BaseModel):
 
 class AccountSetPrimaryRequest(BaseModel):
     account_id: int
+
+
+class BalanceUpdateRequest(BaseModel):
+    balance: int

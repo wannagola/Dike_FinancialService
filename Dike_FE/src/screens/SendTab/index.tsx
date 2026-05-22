@@ -1,8 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Icon from '../../components/Icon';
 import HoldButton from '../../components/HoldButton';
 import BigWriteOverlay from '../../components/BigWriteOverlay';
 import NumPad from './NumPad';
+import { getAccounts, sendMoney, BANK_CODE, BANK_NAME } from '../../api';
 import type { Contact } from '../../types';
 
 type Step = 'contacts' | 'new-account' | 'amount' | 'confirm' | 'done';
@@ -29,6 +30,16 @@ export default function SendTab({ onAnnounce }: SendTabProps) {
   const [recipient, setRecipient]   = useState<Contact | null>(null);
   const [amount, setAmount]         = useState('');
   const [amtMethod, setAmtMethod]   = useState<AmountMethod>('numpad');
+  const [fromAccountId, setFromAccountId] = useState<number | null>(null);
+
+  useEffect(() => {
+    getAccounts()
+      .then(list => {
+        const primary = list.find(a => a.is_primary) ?? list[0];
+        if (primary) setFromAccountId(primary.id);
+      })
+      .catch(() => null);
+  }, []);
 
   /* 새 계좌 입력 상태 */
   const [newBank, setNewBank]       = useState('');
@@ -69,7 +80,7 @@ export default function SendTab({ onAnnounce }: SendTabProps) {
     const c: Contact = {
       id: 'new',
       name: newName || '새 계좌',
-      bank: newBank,
+      bank: BANK_CODE[newBank] ? newBank : newBank,
       account: newAcct,
       avatar: '🏦',
     };
@@ -84,7 +95,20 @@ export default function SendTab({ onAnnounce }: SendTabProps) {
     onAnnounce(`${Number(amount).toLocaleString()}원을 보냅니다. 길게 눌러 확인하세요.`);
   };
 
-  const finish = () => { setStep('done'); onAnnounce('송금이 완료됐습니다.'); };
+  const finish = async () => {
+    if (!fromAccountId || !recipient || !amount) return;
+    const acctNum = recipient.account.replace(/-/g, '');
+    const bankCode = BANK_CODE[recipient.bank] ?? undefined;
+    try {
+      await sendMoney(fromAccountId, acctNum, Number(amount), bankCode);
+      setStep('done');
+      onAnnounce('송금이 완료됐습니다.');
+    } catch (e: unknown) {
+      const code = (e as { code?: string }).code;
+      if (code === 'TX_003') onAnnounce('잔액이 부족합니다.');
+      else onAnnounce('송금 중 오류가 발생했습니다.');
+    }
+  };;
 
   const reset = () => {
     setStep('contacts'); setRecipient(null); setAmount('');

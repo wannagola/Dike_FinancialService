@@ -1,5 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Icon from '../components/Icon';
+import { getAccounts, BANK_NAME } from '../api';
+import type { ApiAccount } from '../types';
 
 interface HomeTabProps {
   onAnnounce: (text: string) => void;
@@ -8,14 +10,8 @@ interface HomeTabProps {
   onGoSend: () => void;
 }
 
-const ACCOUNT = {
-  bankName: '신한은행',
-  number: '110-123-456789',
-  balance: 1250000,
-};
-
-const VOICE_CMDS: { label: string; action: (cb: HomeTabProps) => void }[] = [
-  { label: '잔액 확인',  action: ({ onAnnounce }) => onAnnounce('잔액은 1,250,000원입니다.') },
+const VOICE_CMDS: { label: string; action: (cb: HomeTabProps, bal: number) => void }[] = [
+  { label: '잔액 확인',  action: ({ onAnnounce }, bal) => onAnnounce(`잔액은 ${bal.toLocaleString()}원입니다.`) },
   { label: '이체하기',   action: ({ onGoSend }) => onGoSend() },
   { label: '알림 확인',  action: ({ onShowNotif }) => onShowNotif() },
   { label: '마이페이지', action: ({ onGoMyPage }) => onGoMyPage() },
@@ -25,7 +21,18 @@ export default function HomeTab(props: HomeTabProps) {
   const { onAnnounce } = props;
   const [hidden, setHidden] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [account, setAccount] = useState<ApiAccount | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => {
+    getAccounts()
+      .then(list => setAccount(list.find(a => a.is_primary) ?? list[0] ?? null))
+      .catch(() => null);
+  }, []);
+
+  const bankName = account ? (BANK_NAME[account.bank_code] ?? account.bank_code) : '—';
+  const balance = account?.balance_cache ?? 0;
+  const accountNumber = account?.account_number ?? '—';
 
   const toggleHide = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -77,14 +84,14 @@ export default function HomeTab(props: HomeTabProps) {
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-1">
-          <span className="text-[13px] text-sub">{ACCOUNT.bankName}</span>
+          <span className="text-[13px] text-sub">{bankName}</span>
           <button onClick={toggleHide} className="p-1">
             <Icon name={hidden ? 'eye-off' : 'eye'} size={18} color="rgba(255,255,255,0.5)" />
           </button>
         </div>
-        <div className="text-[12px] text-mute mb-3">{ACCOUNT.number}</div>
+        <div className="text-[12px] text-mute mb-3">{accountNumber}</div>
         <div className="text-[32px] font-bold text-on tracking-tight">
-          {hidden ? '••••••' : `${ACCOUNT.balance.toLocaleString()}원`}
+          {hidden ? '••••••' : `${balance.toLocaleString()}원`}
         </div>
       </div>
 
@@ -148,7 +155,7 @@ export default function HomeTab(props: HomeTabProps) {
         {VOICE_CMDS.map(({ label, action }) => (
           <button
             key={label}
-            onClick={(e) => { e.stopPropagation(); action(props); }}
+            onClick={(e) => { e.stopPropagation(); action(props, balance); }}
             className="glass rounded-xl py-3 px-4 text-[13px] text-sub text-left border border-soft"
           >
             &quot;{label}&quot;

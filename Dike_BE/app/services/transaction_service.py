@@ -55,6 +55,7 @@ async def create_transaction(req: TransactionCreateRequest, user: User, db: Asyn
         user_id=user.id,
         from_account_id=req.from_account_id,
         to_account_number=req.to_account_number,
+        to_bank_code=req.to_bank_code,
         amount=req.amount,
         memo=req.memo,
         status="completed",

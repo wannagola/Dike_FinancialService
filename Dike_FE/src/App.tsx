@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { AuthProvider, useAuth } from './store/auth';
 import StatusBar from './components/StatusBar';
 import TabIndicator from './components/TabIndicator';
 import VoiceToast from './components/VoiceToast';
@@ -9,11 +10,13 @@ import HistoryTab from './screens/HistoryTab';
 import SendTab from './screens/SendTab';
 import MyPageTab from './screens/MyPageTab';
 import NotificationsPanel from './screens/NotificationsPanel';
+import LoginScreen from './screens/LoginScreen';
 import { TABS, TAB_ANNOUNCE } from './constants/tabs';
 import { useAnnounce } from './hooks/useAnnounce';
 import { useSwipe } from './hooks/useSwipe';
 
-export default function App() {
+function MainApp() {
+  const { isLoggedIn, loading } = useAuth();
   const [idx, setIdx] = useState(0);
   const [showNotif, setShowNotif] = useState(false);
   const { voiceState, announce } = useAnnounce();
@@ -24,6 +27,16 @@ export default function App() {
   }, [announce]);
 
   const { dragHandlers } = useSwipe(idx, goTo, TABS.length - 1);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-navy-deep flex items-center justify-center">
+        <div className="text-sub text-[14px]">불러오는 중...</div>
+      </div>
+    );
+  }
+
+  if (!isLoggedIn) return <LoginScreen />;
 
   const renderTab = () => {
     switch (TABS[idx].key) {
@@ -60,5 +73,13 @@ export default function App() {
         {showNotif && <NotificationsPanel onClose={() => setShowNotif(false)} />}
       </div>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <MainApp />
+    </AuthProvider>
   );
 }

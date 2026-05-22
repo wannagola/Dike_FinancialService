@@ -87,3 +87,13 @@ async def delete_account(account_id: int, user: User, db: AsyncSession) -> None:
     account = await get_account(account_id, user, db)
     await db.execute(delete(Account).where(Account.id == account.id))
     await db.commit()
+
+
+async def update_balance(account_id: int, balance: int, user: User, db: AsyncSession) -> Account:
+    account = await get_account(account_id, user, db)
+    await db.execute(
+        update(Account).where(Account.id == account_id).values(balance_cache=balance)
+    )
+    await db.commit()
+    await db.refresh(account)
+    return account
