@@ -5,7 +5,7 @@ export type IconName =
   | 'bell' | 'eye' | 'eye-off' | 'wallet' | 'check' | 'x'
   | 'plus' | 'arrow-left' | 'arrow-right' | 'pen' | 'camera'
   | 'volume' | 'shield' | 'settings' | 'chevron-right' | 'bank'
-  | 'star';
+  | 'star' | 'image';
 
 export interface Tab {
   key: TabKey;

@@ -5,15 +5,16 @@ import type { OcrResult } from '../../types';
 interface ScanFlowProps {
   onDone: (result: OcrResult) => void;
   onBack: () => void;
+  mode: 'camera' | 'gallery';
 }
 
-export default function ScanFlow({ onDone, onBack }: ScanFlowProps) {
+export default function ScanFlow({ onDone, onBack, mode }: ScanFlowProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<'idle' | 'uploading' | 'done' | 'error'>('idle');
   const [msgIdx, setMsgIdx] = useState(0);
 
   const MSGS = [
-    '사진을 선택하거나 촬영하세요',
+    mode === 'camera' ? '카메라로 문서를 촬영하세요' : '갤러리에서 사진을 선택하세요',
     '문서를 인식하고 있습니다...',
     'AI가 내용을 분석 중입니다...',
     '인식 완료!',
@@ -45,14 +46,14 @@ export default function ScanFlow({ onDone, onBack }: ScanFlowProps) {
     <div className="flex flex-col h-full animate-fade-in">
       <div className="flex items-center gap-3 px-5 py-4 border-b border-soft">
         <button onClick={onBack} className="text-[13px] text-sub">← 뒤로</button>
-        <span className="text-[16px] font-semibold text-on flex-1 text-center">카메라 스캔</span>
+        <span className="text-[16px] font-semibold text-on flex-1 text-center">{mode === 'camera' ? '카메라 스캔' : '사진 업로드'}</span>
       </div>
 
       <input
         ref={inputRef}
         type="file"
         accept="image/*,application/pdf"
-        capture="environment"
+        {...(mode === 'camera' ? { capture: 'environment' } : {})}
         className="hidden"
         onChange={handleFile}
       />
@@ -83,7 +84,7 @@ export default function ScanFlow({ onDone, onBack }: ScanFlowProps) {
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
                 <circle cx="12" cy="13" r="4"/>
               </svg>
-              <span className="text-[13px]">탭해서 촬영 / 파일 선택</span>
+              <span className="text-[13px]">{mode === 'camera' ? '탭해서 촬영하세요' : '탭해서 사진을 선택하세요'}</span>
             </div>
           )}
           {status === 'uploading' && (

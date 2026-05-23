@@ -5,7 +5,7 @@ import OcrConfirm from './OcrConfirm';
 import DirectInput from './DirectInput';
 import type { OcrResult } from '../../types';
 
-type Step = 'home' | 'scan' | 'ocr' | 'direct' | 'done';
+type Step = 'home' | 'scan' | 'gallery' | 'ocr' | 'direct' | 'done';
 
 interface UploadTabProps {
   onAnnounce: (text: string) => void;
@@ -14,15 +14,24 @@ interface UploadTabProps {
 export default function UploadTab({ onAnnounce }: UploadTabProps) {
   const [step, setStep] = useState<Step>('home');
   const [ocrResult, setOcrResult] = useState<OcrResult | null>(null);
+  const [ocrOrigin, setOcrOrigin] = useState<'scan' | 'gallery'>('scan');
 
   if (step === 'scan') return (
     <ScanFlow
-      onDone={(result) => { setOcrResult(result); setStep('ocr'); }}
+      mode="camera"
+      onDone={(result) => { setOcrResult(result); setOcrOrigin('scan'); setStep('ocr'); }}
+      onBack={() => setStep('home')}
+    />
+  );
+  if (step === 'gallery') return (
+    <ScanFlow
+      mode="gallery"
+      onDone={(result) => { setOcrResult(result); setOcrOrigin('gallery'); setStep('ocr'); }}
       onBack={() => setStep('home')}
     />
   );
   if (step === 'ocr' && ocrResult) return (
-    <OcrConfirm result={ocrResult} onBack={() => setStep('scan')} onDone={() => setStep('done')} />
+    <OcrConfirm result={ocrResult} onBack={() => setStep(ocrOrigin)} onDone={() => setStep('done')} />
   );
   if (step === 'direct') return <DirectInput onBack={() => setStep('home')} onDone={() => setStep('done')} />;
 
@@ -64,6 +73,20 @@ export default function UploadTab({ onAnnounce }: UploadTabProps) {
         <div>
           <div className="text-[16px] font-bold text-on">카메라 촬영</div>
           <div className="text-[12px] text-sub mt-0.5">AI가 자동으로 내용을 인식해요</div>
+        </div>
+      </button>
+
+      {/* 사진 업로드 */}
+      <button
+        onClick={() => { setStep('gallery'); onAnnounce('갤러리에서 사진을 선택하세요.'); }}
+        className="glass-elev rounded-2xl p-5 flex items-center gap-4 border border-soft text-left"
+      >
+        <div className="w-14 h-14 rounded-2xl bg-blue-bright/15 flex items-center justify-center shrink-0">
+          <Icon name="image" size={28} color="#60a5fa" />
+        </div>
+        <div>
+          <div className="text-[16px] font-bold text-on">사진 업로드</div>
+          <div className="text-[12px] text-sub mt-0.5">갤러리에서 사진을 선택하세요</div>
         </div>
       </button>
 
